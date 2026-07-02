@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Notice Board - G1-A</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            text: '#f1f5f9',
+                            muted: '#94a3b8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .nav-tab { position: relative; padding-bottom: 8px; font-weight: 600; color: #94a3b8; transition: all 0.2s; }
+        .nav-tab.active { color: #2563eb; }
+        .dark .nav-tab.active { color: #60a5fa; }
+        .nav-tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: #2563eb; border-radius: 10px; }
+        .dark .nav-tab.active::after { background: #60a5fa; }
+        .date-btn { transition: all 0.2s; min-width: 90px; }
+        .date-active { background-color: #2563eb; color: white; box-shadow: 0 8px 12px -3px rgba(37, 99, 235, 0.3); transform: translateY(-1px); border-color: transparent !important; }
+        .has-wah { border: 2px solid #f59e0b !important; color: #d97706; }
+        .dark .has-wah { border-color: #fbbf24 !important; color: #fbbf24; }
+        .announcement-item { border-left: 3px solid #3b82f6; padding-left: 12px; margin-bottom: 12px; }
+        .card { transition: background-color 0.3s, box-shadow 0.3s; }
+        .subject-tag { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 4px; }
+    </style>
+</head>
+<body class="pb-24 bg-slate-50 text-slate-900 dark:bg-dark-bg dark:text-dark-text">
+    <div id="app" class="max-w-md mx-auto px-5 pt-8">
+        <!-- Header -->
+        <header class="flex justify-between items-start mb-6">
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight">Notice Board</h1>
+                <p class="text-slate-500 dark:text-dark-muted font-medium mt-1">G1-A Program Planning</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="toggleDarkMode()" class="p-2.5 bg-white dark:bg-dark-card rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 text-slate-400 hover:text-blue-600 transition-colors">
+                    <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
+                    <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+                </button>
+                <button onclick="fetchData()" class="p-2.5 bg-white dark:bg-dark-card rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 text-slate-400 hover:text-blue-600 transition-colors">
+                    <i data-lucide="refresh-cw" class="w-4 h-4" id="refresh-icon"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Navigation Tabs -->
+        <nav class="flex gap-8 mb-8 border-b border-slate-100 dark:border-slate-800 px-1">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-tab active">Dashboard</button>
+            <button onclick="switchTab('contacts')" id="tab-contacts" class="nav-tab">Contacts</button>
+            <button onclick="switchTab('notices')" id="tab-notices" class="nav-tab">Notices</button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <!-- Loading State -->
+            <div id="loading" class="flex flex-col items-center justify-center py-24">
+                <div class="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                <p class="text-slate-400 font-medium">Syncing...</p>
+            </div>
+
+            <!-- DASHBOARD TAB -->
+            <div id="view-dashboard" class="space-y-6">
+                <!-- Date Navigation -->
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <span class="text-[10px] font-bold text-slate-400 dark:text-dark-muted uppercase tracking-widest">Timeline</span>
+                        <div class="flex items-center gap-3">
+                            <span id="last-updated" class="text-[9px] text-slate-300 dark:text-slate-600 font-bold">---</span>
+                            <button onclick="jumpToToday()" class="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase">Today</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto whitespace-nowrap py-2 no-scrollbar flex gap-2" id="date-nav"></div>
+                </div>
+
+                <!-- Date Header -->
+                <div class="flex items-center gap-3 mb-2 px-1">
+                    <div class="h-6 w-1 bg-blue-600 rounded-full"></div>
+                    <h2 id="display-date" class="text-lg font-bold">---</h2>
+                </div>
+
+                <!-- WAH Card -->
+                <section class="card bg-white dark:bg-dark-card p-5 rounded-2xl shadow-sm border-t-4 border-amber-400">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="home" class="w-4 h-4 text-amber-500"></i>
+                        <span class="text-xs font-bold text-slate-500 dark:text-dark-muted uppercase tracking-wider">Work at Home</span>
+                    </div>
+                    <div id="wah-content" class="text-sm space-y-4"></div>
+                </section>
+
+                <!-- Lessons Card -->
+                <section class="card bg-white dark:bg-dark-card p-5 rounded-2xl shadow-sm border-t-4 border-emerald-400">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="book-open" class="w-4 h-4 text-emerald-500"></i>
+                        <span class="text-xs font-bold text-slate-500 dark:text-dark-muted uppercase tracking-wider">Today's Lessons</span>
+                    </div>
+                    <div id="lessons-content" class="space-y-6"></div>
+                </section>
+            </div>
+
+            <!-- CONTACTS TAB -->
+            <div id="view-contacts" class="hidden space-y-4">
+                <h2 class="text-xl font-bold mb-4 px-1">Facilitator Contacts</h2>
+                <div id="contacts-list" class="space-y-4"></div>
+            </div>
+
+            <!-- NOTICES TAB -->
+            <div id="view-notices" class="hidden space-y-4">
+                <h2 class="text-xl font-bold mb-4 px-1">General Notices</h2>
+                <div id="notices-list" class="card bg-white dark:bg-dark-card p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800"></div>
+            </div>
+        </main>
+
+        <footer class="mt-12 text-center">
+            <a href="https://docs.google.com/spreadsheets/d/1jQ1tURhBDGAgwiZl2dUnFMOP7-yUsekSrnVGSzQx9Lc/edit" target="_blank" class="text-[10px] text-slate-300 dark:text-slate-700 font-bold uppercase tracking-widest hover:text-blue-400 transition-colors">Source Spreadsheet</a>
+        </footer>
+    </div>
+
+    <script>
+        const SHEET_ID = '1jQ1tURhBDGAgwiZl2dUnFMOP7-yUsekSrnVGSzQx9Lc';
+        const GID_DAILY = '1439989763';
+        const GID_NOTICE = '502021398';
+
+        // Updated Subject mapping based on new sheet columns
+        const SUBJECTS = [
+            { id: 'morningCircle', label: 'Morning Circle', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
+            { id: 'art', label: 'Art', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' },
+            { id: 'communityWork', label: 'Community Work', color: 'bg-stone-100 text-stone-700 dark:bg-stone-900/40 dark:text-stone-300' },
+            { id: 'designLab', label: 'Design Lab', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
+            { id: 'english', label: 'English', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' },
+            { id: 'evlf', label: 'EVLF', color: 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300' },
+            { id: 'hindi', label: 'Hindi', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
+            { id: 'library', label: 'Library', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
+            { id: 'marathi', label: 'Marathi', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300' },
+            { id: 'numeracy', label: 'Numeracy', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
+            { id: 'sports', label: 'Sports', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' },
+            { id: 'thematics', label: 'Thematics', color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300' }
+        ];
+
+        let dailyData = [];
+        let noticeData = [];
+        let contactData = [];
+        let selectedDateStr = "";
+        let currentTab = 'dashboard';
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
+        }
+
+        if (localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        async function fetchData() {
+            const icon = document.getElementById('refresh-icon');
+            if (icon) icon.classList.add('animate-spin');
+            
+            try {
+                const dailyUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID_DAILY}`;
+                const noticeUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID_NOTICE}`;
+
+                const [dailyRes, noticeRes] = await Promise.all([
+                    fetch(dailyUrl).then(res => res.text()),
+                    fetch(noticeUrl).then(res => res.text())
+                ]);
+
+                parseDailyData(dailyRes);
+                parseNoticeAndContactData(noticeRes);
+                
+                document.getElementById('last-updated').innerText = 'SYNCED ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                renderApp();
+            } catch (error) {
+                console.error("Fetch error:", error);
+            } finally {
+                if (icon) setTimeout(() => icon.classList.remove('animate-spin'), 500);
+            }
+        }
+
+        function parseDailyData(csv) {
+            const results = Papa.parse(csv, { header: false }).data;
+            let currentDay = null;
+            let processed = [];
+
+            for (let i = 2; i < results.length; i++) { // Start from row 3 (index 2)
+                const row = results[i];
+                if (!row || row.length < 2) continue;
+
+                const dateVal = row[0] ? row[0].trim() : "";
+                const component = row[1] ? row[1].trim() : "";
+
+                if (dateVal && dateVal.toLowerCase() !== 'date' && dateVal.toLowerCase() !== 'component') {
+                    currentDay = dateVal;
+                }
+
+                if (currentDay && component) {
+                    processed.push({
+                        date: currentDay,
+                        component: component,
+                        morningCircle: row[2] || "",
+                        art: row[3] || "",
+                        communityWork: row[4] || "",
+                        designLab: row[5] || "",
+                        english: row[6] || "",
+                        evlf: row[7] || "",
+                        hindi: row[8] || "",
+                        library: row[9] || "",
+                        marathi: row[10] || "",
+                        numeracy: row[11] || "",
+                        sports: row[12] || "",
+                        thematics: row[13] || ""
+                    });
+                }
+            }
+
+            const grouped = {};
+            processed.forEach(item => {
+                if (!grouped[item.date]) grouped[item.date] = [];
+                grouped[item.date].push(item);
+            });
+
+            const parseDate = (str) => {
+                try {
+                    // Expecting format like "Fri, 17 Jul" or "Fri, 17 Jul 2026"
+                    const parts = str.split(',')[1].trim().split(' ');
+                    const day = parseInt(parts[0]);
+                    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                    const month = monthNames.indexOf(parts[1]);
+                    return new Date(2026, month, day);
+                } catch(e) { return new Date(0); }
+            };
+
+            const sortedDates = Object.keys(grouped).sort((a, b) => parseDate(a) - parseDate(b));
+            
+            dailyData = sortedDates.map(date => ({
+                date: date,
+                timestamp: parseDate(date),
+                entries: grouped[date],
+                hasWAH: grouped[date].some(e => e.component.toLowerCase().includes('wah') && SUBJECTS.some(s => e[s.id] && e[s.id].trim()))
+            }));
+
+            if (!selectedDateStr) {
+                jumpToToday(false);
+            }
+        }
+
+        function parseNoticeAndContactData(csv) {
+            const results = Papa.parse(csv, { header: false }).data;
+            let notices = [];
+            let contacts = [];
+            let isContactSection = false;
+
+            results.forEach(row => {
+                const text = row.filter(c => c && c.trim()).join(" ").trim();
+                if (!text) return;
+                
+                // Detect contact section
+                if (text.toLowerCase().includes("email addresses") || (text.toLowerCase().includes("names") && text.toLowerCase().includes("subjects"))) {
+                    isContactSection = true;
+                    return;
+                }
+                
+                if (isContactSection) {
+                    // Extract contact row
+                    if (row.length >= 3 && row[2] && row[2].includes("@")) {
+                        contacts.push({ name: row[0], subject: row[1], email: row[2] });
+                    }
+                } else {
+                    // Extract notice
+                    if (!text.toLowerCase().includes("class notice board") && text.length > 10) {
+                        notices.push(text);
+                    }
+                }
+            });
+            noticeData = notices;
+            contactData = contacts;
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            ['dashboard', 'contacts', 'notices'].forEach(t => {
+                const view = document.getElementById(`view-${t}`);
+                const tabBtn = document.getElementById(`tab-${t}`);
+                if (view) view.classList.toggle('hidden', t !== tab);
+                if (tabBtn) tabBtn.classList.toggle('active', t === tab);
+            });
+            renderApp();
+        }
+
+        function jumpToToday(shouldRender = true) {
+            const now = new Date();
+            now.setHours(0,0,0,0);
+            
+            let closest = dailyData[0];
+            let minDiff = Infinity;
+            dailyData.forEach(d => {
+                const diff = Math.abs(d.timestamp - now);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closest = d;
+                }
+            });
+            
+            if (closest) {
+                selectedDateStr = closest.date;
+                if (shouldRender) {
+                    switchTab('dashboard');
+                    renderApp();
+                }
+            }
+        }
+
+        function renderApp() {
+            document.getElementById('loading').classList.add('hidden');
+            if (currentTab === 'dashboard') {
+                renderDateNav();
+                updateDashboardDisplay();
+            } else if (currentTab === 'contacts') {
+                renderContacts();
+            } else if (currentTab === 'notices') {
+                renderNotices();
+            }
+            lucide.createIcons();
+        }
+
+        function renderDateNav() {
+            const nav = document.getElementById('date-nav');
+            if (!nav) return;
+            nav.innerHTML = "";
+            dailyData.forEach(day => {
+                const btn = document.createElement('button');
+                const isActive = day.date === selectedDateStr;
+                btn.className = `date-btn px-4 py-2 rounded-xl text-xs font-bold border transition-all flex-shrink-0 ${isActive ? 'date-active' : 'bg-white dark:bg-dark-card text-slate-400 dark:text-dark-muted border-slate-100 dark:border-slate-800'} ${day.hasWAH && !isActive ? 'has-wah' : ''}`;
+                btn.innerText = day.date;
+                btn.onclick = () => {
+                    selectedDateStr = day.date;
+                    renderDateNav();
+                    updateDashboardDisplay();
+                };
+                nav.appendChild(btn);
+            });
+            const activeBtn = nav.querySelector('.date-active');
+            if (activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+
+        function updateDashboardDisplay() {
+            const displayDate = document.getElementById('display-date');
+            if (displayDate) displayDate.innerText = selectedDateStr;
+            
+            const day = dailyData.find(d => d.date === selectedDateStr);
+            if (!day) return;
+
+            const wah = day.entries.find(e => e.component.toLowerCase().includes('wah'));
+            const lesson = day.entries.find(e => e.component.toLowerCase().includes('lesson'));
+
+            // Render WAH
+            const wahContainer = document.getElementById('wah-content');
+            if (wahContainer) {
+                let wahHtml = "";
+                if (wah) {
+                    SUBJECTS.forEach(sub => {
+                        const val = wah[sub.id];
+                        if (val && val.trim()) {
+                            wahHtml += `
+                                <div>
+                                    <span class="subject-tag ${sub.color}">${sub.label}</span>
+                                    <p class="text-slate-600 dark:text-slate-300 font-medium pl-1">${val}</p>
+                                </div>`;
+                        }
+                    });
+                }
+                wahContainer.innerHTML = wahHtml || "<p class='text-slate-400 dark:text-dark-muted italic'>No WAH for this date.</p>";
+            }
+
+            // Render Lessons
+            const lessonContainer = document.getElementById('lessons-content');
+            if (lessonContainer) {
+                let lessonHtml = "";
+                if (lesson) {
+                    SUBJECTS.forEach(sub => {
+                        const val = lesson[sub.id];
+                        if (val && val.trim()) {
+                            lessonHtml += `
+                                <div class="border-l-2 border-slate-100 dark:border-slate-800 pl-4 py-1">
+                                    <span class="subject-tag ${sub.color}">${sub.label}</span>
+                                    <p class="text-slate-700 dark:text-slate-300 text-sm leading-relaxed mt-1">${val}</p>
+                                </div>`;
+                        }
+                    });
+                }
+                lessonContainer.innerHTML = lessonHtml || "<p class='text-slate-400 dark:text-dark-muted italic'>No lesson details.</p>";
+            }
+        }
+
+        function renderContacts() {
+            const list = document.getElementById('contacts-list');
+            if (!list) return;
+            list.innerHTML = contactData.length === 0 ? "<p class='text-slate-400 italic p-4'>Contact list is empty.</p>" : contactData.map(c => `
+                <div class="card bg-white dark:bg-dark-card p-4 rounded-2xl shadow-sm flex items-center justify-between border border-slate-50 dark:border-slate-800">
+                    <div><h3 class="font-bold">${c.name}</h3><p class="text-xs text-slate-500 dark:text-dark-muted font-medium">${c.subject}</p></div>
+                    <a href="mailto:${c.email}" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg"><i data-lucide="mail" class="w-4 h-4"></i></a>
+                </div>
+            `).join('');
+        }
+
+        function renderNotices() {
+            const list = document.getElementById('notices-list');
+            if (!list) return;
+            list.innerHTML = noticeData.length === 0 ? "<p class='text-slate-400 italic'>No active notices.</p>" : noticeData.map(n => `<div class="announcement-item"><p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">${n}</p></div>`).join('');
+        }
+
+        fetchData();
+    </script>
+</body>
+</html>
