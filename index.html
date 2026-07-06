@@ -3,134 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Notice Board - G1-A</title>
+    <title>Notice Board · G1-A</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        dark: {
-                            bg: '#0f172a',
-                            card: '#1e293b',
-                            text: '#f1f5f9',
-                            muted: '#94a3b8'
-                        }
-                    }
-                }
-            }
-        }
+        tailwind.config = { darkMode: 'class' }
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .nav-tab { position: relative; padding-bottom: 8px; font-weight: 600; color: #94a3b8; transition: all 0.2s; }
-        .nav-tab.active { color: #2563eb; }
-        .dark .nav-tab.active { color: #60a5fa; }
-        .nav-tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: #2563eb; border-radius: 10px; }
-        .dark .nav-tab.active::after { background: #60a5fa; }
-        .date-btn { transition: all 0.2s; min-width: 90px; }
-        .date-active { background-color: #2563eb; color: white; box-shadow: 0 8px 12px -3px rgba(37, 99, 235, 0.3); transform: translateY(-1px); border-color: transparent !important; }
-        .has-wah { border: 2px solid #f59e0b !important; color: #d97706; }
-        .dark .has-wah { border-color: #fbbf24 !important; color: #fbbf24; }
-        .announcement-item { border-left: 3px solid #3b82f6; padding-left: 12px; margin-bottom: 12px; }
-        .card { transition: background-color 0.3s, box-shadow 0.3s; }
-        .subject-tag { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 4px; }
+        @import url('https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+
+        :root{
+            --paper:#FAF8F4;
+            --card:#FFFFFF;
+            --ink:#23262B;
+            --ink-soft:#6B7280;
+            --ink-faint:#9CA3AF;
+            --line:#E9E5DC;
+            --accent:#3A6EA5;
+            --accent-soft:#EAF0F7;
+            --wah:#B8792E;
+            --wah-soft:#FBF1E2;
+        }
+        html.dark{
+            --paper:#14171C;
+            --card:#1C2128;
+            --ink:#EDEEF0;
+            --ink-soft:#9AA2AD;
+            --ink-faint:#6B7280;
+            --line:#2A2F37;
+            --accent:#6FA0D8;
+            --accent-soft:#20304A;
+            --wah:#E3A85B;
+            --wah-soft:#3A2E1B;
+        }
+
+        *{ box-sizing:border-box; }
+        body{
+            font-family:'Inter',sans-serif;
+            background:var(--paper);
+            color:var(--ink);
+            transition:background-color .25s ease, color .25s ease;
+        }
+        h1,h2,.serif{ font-family:'Lora',serif; }
+
+        .no-scrollbar::-webkit-scrollbar{ display:none; }
+        .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+
+        .icon-btn{
+            width:40px;height:40px;border-radius:12px;
+            display:flex;align-items:center;justify-content:center;
+            background:var(--card); border:1px solid var(--line);
+            color:var(--ink-soft);
+        }
+        .icon-btn:hover{ color:var(--accent); }
+
+        .nav-tab{
+            position:relative; padding-bottom:10px; font-weight:600; font-size:.9rem;
+            color:var(--ink-faint); transition:color .15s ease;
+        }
+        .nav-tab.active{ color:var(--accent); }
+        .nav-tab.active::after{
+            content:''; position:absolute; bottom:-1px; left:0; right:0; height:2px;
+            background:var(--accent); border-radius:2px;
+        }
+
+        .card{
+            background:var(--card);
+            border:1px solid var(--line);
+            border-radius:18px;
+        }
+
+        /* Calendar-tile date picker */
+        .date-tile{
+            flex-shrink:0; width:58px; padding:8px 0 10px; border-radius:14px;
+            border:1px solid var(--line); background:var(--card);
+            display:flex; flex-direction:column; align-items:center; gap:2px;
+            transition:all .15s ease; cursor:pointer;
+        }
+        .date-tile .wd{ font-size:.62rem; font-weight:700; letter-spacing:.06em; color:var(--ink-faint); text-transform:uppercase; }
+        .date-tile .dn{ font-size:1.15rem; font-weight:700; color:var(--ink); font-family:'Lora',serif; }
+        .date-tile .dot{ width:5px; height:5px; border-radius:50%; background:var(--wah); opacity:0; margin-top:1px; }
+        .date-tile.has-wah .dot{ opacity:1; }
+        .date-tile.selected{
+            background:var(--accent); border-color:var(--accent);
+            box-shadow:0 6px 14px -4px rgba(58,110,165,.4);
+        }
+        .date-tile.selected .wd, .date-tile.selected .dn{ color:#fff; }
+        .date-tile.selected .dot{ background:#fff; }
+
+        .eyebrow{
+            font-size:.68rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase;
+            color:var(--ink-faint);
+        }
+
+        /* Subject entries */
+        .entry{
+            border-left:3px solid var(--entry-color, var(--accent));
+            padding:2px 0 2px 14px;
+        }
+        .entry + .entry{ margin-top:16px; }
+        .entry .label{
+            font-size:.72rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+            color:var(--entry-color, var(--accent)); display:block; margin-bottom:3px;
+        }
+        .entry .body{
+            font-size:.92rem; line-height:1.55; color:var(--ink);
+        }
+
+        .empty-note{
+            font-size:.88rem; color:var(--ink-faint); font-style:italic;
+        }
+
+        .notice-item{
+            padding:14px 0; border-bottom:1px solid var(--line);
+        }
+        .notice-item:last-child{ border-bottom:none; padding-bottom:0; }
+        .notice-item:first-child{ padding-top:0; }
+        .notice-item p{ font-size:.92rem; line-height:1.6; color:var(--ink); }
+
+        .contact-card{
+            display:flex; align-items:center; justify-content:space-between;
+            padding:14px 16px; border-radius:16px;
+        }
+        .contact-card .name{ font-weight:700; font-size:.95rem; color:var(--ink); }
+        .contact-card .subj{ font-size:.75rem; font-weight:600; color:var(--ink-soft); margin-top:1px; }
     </style>
 </head>
-<body class="pb-24 bg-slate-50 text-slate-900 dark:bg-dark-bg dark:text-dark-text">
+<body class="pb-24">
     <div id="app" class="max-w-md mx-auto px-5 pt-8">
-        <!-- Header -->
-        <header class="flex justify-between items-start mb-6">
+
+        <header class="flex justify-between items-start mb-7">
             <div>
-                <h1 class="text-3xl font-extrabold tracking-tight">Notice Board</h1>
-                <p class="text-slate-500 dark:text-dark-muted font-medium mt-1">G1-A Program Planning</p>
+                <h1 class="text-[1.7rem] font-semibold tracking-tight leading-tight">Notice Board</h1>
+                <p class="text-xs font-semibold uppercase tracking-widest mt-1" style="color:var(--ink-faint)">G1-A Program Planning</p>
             </div>
             <div class="flex gap-2">
-                <button onclick="toggleDarkMode()" class="p-2.5 bg-white dark:bg-dark-card rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 text-slate-400 hover:text-blue-600 transition-colors">
+                <button onclick="toggleDarkMode()" class="icon-btn">
                     <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
                     <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
                 </button>
-                <button onclick="fetchData()" class="p-2.5 bg-white dark:bg-dark-card rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 text-slate-400 hover:text-blue-600 transition-colors">
+                <button onclick="fetchData()" class="icon-btn">
                     <i data-lucide="refresh-cw" class="w-4 h-4" id="refresh-icon"></i>
                 </button>
             </div>
         </header>
 
-        <!-- Main Navigation Tabs -->
-        <nav class="flex gap-8 mb-8 border-b border-slate-100 dark:border-slate-800 px-1">
+        <nav class="flex gap-7 mb-8 border-b" style="border-color:var(--line)">
             <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-tab active">Dashboard</button>
             <button onclick="switchTab('contacts')" id="tab-contacts" class="nav-tab">Contacts</button>
             <button onclick="switchTab('notices')" id="tab-notices" class="nav-tab">Notices</button>
         </nav>
 
-        <!-- Main Content Area -->
         <main id="main-content">
-            <!-- Loading State -->
             <div id="loading" class="flex flex-col items-center justify-center py-24">
-                <div class="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-                <p class="text-slate-400 font-medium">Syncing...</p>
+                <div class="w-9 h-9 border-[3px] rounded-full animate-spin mb-4" style="border-color:var(--line); border-top-color:var(--accent)"></div>
+                <p class="text-sm font-medium" style="color:var(--ink-faint)">Loading today's schedule…</p>
             </div>
 
-            <!-- DASHBOARD TAB -->
-            <div id="view-dashboard" class="space-y-6">
-                <!-- Date Navigation -->
-                <div class="mb-6">
-                    <div class="flex items-center justify-between mb-3 px-1">
-                        <span class="text-[10px] font-bold text-slate-400 dark:text-dark-muted uppercase tracking-widest">Timeline</span>
+            <!-- DASHBOARD -->
+            <div id="view-dashboard" class="hidden space-y-6">
+                <div class="mb-2">
+                    <div class="flex items-center justify-between mb-3 px-0.5">
+                        <span class="eyebrow">Timeline</span>
                         <div class="flex items-center gap-3">
-                            <span id="last-updated" class="text-[9px] text-slate-300 dark:text-slate-600 font-bold">---</span>
-                            <button onclick="jumpToToday()" class="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase">Today</button>
+                            <span id="last-updated" class="text-[10px] font-semibold" style="color:var(--ink-faint)">—</span>
+                            <button onclick="jumpToToday()" class="text-[11px] font-bold uppercase tracking-wide" style="color:var(--accent)">Today</button>
                         </div>
                     </div>
-                    <div class="overflow-x-auto whitespace-nowrap py-2 no-scrollbar flex gap-2" id="date-nav"></div>
+                    <div class="overflow-x-auto whitespace-nowrap no-scrollbar flex gap-2 pb-1" id="date-nav"></div>
                 </div>
 
-                <!-- Date Header -->
-                <div class="flex items-center gap-3 mb-2 px-1">
-                    <div class="h-6 w-1 bg-blue-600 rounded-full"></div>
-                    <h2 id="display-date" class="text-lg font-bold">---</h2>
+                <div class="flex items-baseline gap-2 px-0.5">
+                    <h2 id="display-date" class="text-xl font-semibold serif">—</h2>
                 </div>
 
-                <!-- WAH Card -->
-                <section class="card bg-white dark:bg-dark-card p-5 rounded-2xl shadow-sm border-t-4 border-amber-400">
+                <section class="card p-5">
                     <div class="flex items-center gap-2 mb-4">
-                        <i data-lucide="home" class="w-4 h-4 text-amber-500"></i>
-                        <span class="text-xs font-bold text-slate-500 dark:text-dark-muted uppercase tracking-wider">Work at Home</span>
+                        <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:var(--wah-soft)">
+                            <i data-lucide="home" class="w-3.5 h-3.5" style="color:var(--wah)"></i>
+                        </div>
+                        <span class="eyebrow">Work at Home</span>
                     </div>
-                    <div id="wah-content" class="text-sm space-y-4"></div>
+                    <div id="wah-content"></div>
                 </section>
 
-                <!-- Lessons Card -->
-                <section class="card bg-white dark:bg-dark-card p-5 rounded-2xl shadow-sm border-t-4 border-emerald-400">
+                <section class="card p-5">
                     <div class="flex items-center gap-2 mb-4">
-                        <i data-lucide="book-open" class="w-4 h-4 text-emerald-500"></i>
-                        <span class="text-xs font-bold text-slate-500 dark:text-dark-muted uppercase tracking-wider">Today's Lessons</span>
+                        <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:var(--accent-soft)">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5" style="color:var(--accent)"></i>
+                        </div>
+                        <span class="eyebrow">Today's Lessons</span>
                     </div>
-                    <div id="lessons-content" class="space-y-6"></div>
+                    <div id="lessons-content"></div>
                 </section>
             </div>
 
-            <!-- CONTACTS TAB -->
-            <div id="view-contacts" class="hidden space-y-4">
-                <h2 class="text-xl font-bold mb-4 px-1">Facilitator Contacts</h2>
-                <div id="contacts-list" class="space-y-4"></div>
+            <!-- CONTACTS -->
+            <div id="view-contacts" class="hidden space-y-3">
+                <h2 class="text-lg font-semibold serif mb-3 px-0.5">Facilitator Contacts</h2>
+                <div id="contacts-list" class="space-y-2.5"></div>
             </div>
 
-            <!-- NOTICES TAB -->
-            <div id="view-notices" class="hidden space-y-4">
-                <h2 class="text-xl font-bold mb-4 px-1">General Notices</h2>
-                <div id="notices-list" class="card bg-white dark:bg-dark-card p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800"></div>
+            <!-- NOTICES -->
+            <div id="view-notices" class="hidden">
+                <h2 class="text-lg font-semibold serif mb-3 px-0.5">General Notices</h2>
+                <div id="notices-list" class="card p-5"></div>
             </div>
         </main>
 
-        <footer class="mt-12 text-center">
-            <a href="https://docs.google.com/spreadsheets/d/1jQ1tURhBDGAgwiZl2dUnFMOP7-yUsekSrnVGSzQx9Lc/edit" target="_blank" class="text-[10px] text-slate-300 dark:text-slate-700 font-bold uppercase tracking-widest hover:text-blue-400 transition-colors">Source Spreadsheet</a>
+        <footer class="mt-12 text-center pb-4">
+            <a href="https://docs.google.com/spreadsheets/d/1jQ1tURhBDGAgwiZl2dUnFMOP7-yUsekSrnVGSzQx9Lc/edit" target="_blank"
+               class="text-[10px] font-bold uppercase tracking-widest hover:opacity-80" style="color:var(--ink-faint)">Source Spreadsheet</a>
         </footer>
     </div>
 
@@ -139,20 +223,20 @@
         const GID_DAILY = '1439989763';
         const GID_NOTICE = '502021398';
 
-        // Updated Subject mapping based on new sheet columns
+        // Subject mapping — each gets its own accent color, used as a left-border + label color
         const SUBJECTS = [
-            { id: 'morningCircle', label: 'Morning Circle', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
-            { id: 'art', label: 'Art', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' },
-            { id: 'communityWork', label: 'Community Work', color: 'bg-stone-100 text-stone-700 dark:bg-stone-900/40 dark:text-stone-300' },
-            { id: 'designLab', label: 'Design Lab', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
-            { id: 'english', label: 'English', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' },
-            { id: 'evlf', label: 'EVLF', color: 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300' },
-            { id: 'hindi', label: 'Hindi', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
-            { id: 'library', label: 'Library', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
-            { id: 'marathi', label: 'Marathi', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300' },
-            { id: 'numeracy', label: 'Numeracy', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
-            { id: 'sports', label: 'Sports', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' },
-            { id: 'thematics', label: 'Thematics', color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300' }
+            { id: 'morningCircle',  label: 'Morning Circle',   color: '#3A6EA5' },
+            { id: 'art',            label: 'Art',               color: '#8E5B9E' },
+            { id: 'communityWork',  label: 'Community Work',   color: '#6F7A52' },
+            { id: 'designLab',      label: 'Design Lab',       color: '#C0932E' },
+            { id: 'english',        label: 'English',          color: '#4C4A8A' },
+            { id: 'evlf',           label: 'EVLF',              color: '#B5556B' },
+            { id: 'hindi',          label: 'Hindi',             color: '#A6532E' },
+            { id: 'library',        label: 'Library',          color: '#2E8290' },
+            { id: 'marathi',        label: 'Marathi',           color: '#7A5C8E' },
+            { id: 'numeracy',       label: 'Numeracy',         color: '#4F7860' },
+            { id: 'sports',         label: 'Sports',            color: '#B04A3A' },
+            { id: 'thematics',      label: 'Thematics',        color: '#2C7DA0' }
         ];
 
         let dailyData = [];
@@ -161,19 +245,18 @@
         let selectedDateStr = "";
         let currentTab = 'dashboard';
 
+        // Dark mode is session-only (no persistence) — defaults to the system preference.
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
         function toggleDarkMode() {
             document.documentElement.classList.toggle('dark');
-            localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
-        }
-
-        if (localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
         }
 
         async function fetchData() {
             const icon = document.getElementById('refresh-icon');
             if (icon) icon.classList.add('animate-spin');
-            
+
             try {
                 const dailyUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID_DAILY}`;
                 const noticeUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID_NOTICE}`;
@@ -185,11 +268,15 @@
 
                 parseDailyData(dailyRes);
                 parseNoticeAndContactData(noticeRes);
-                
-                document.getElementById('last-updated').innerText = 'SYNCED ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                document.getElementById('last-updated').innerText = 'Synced ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 renderApp();
             } catch (error) {
                 console.error("Fetch error:", error);
+                const loading = document.getElementById('loading');
+                if (loading) {
+                    loading.innerHTML = `<p class="text-sm font-medium" style="color:var(--ink-faint)">Couldn't load the schedule. Check your connection and try again.</p>`;
+                }
             } finally {
                 if (icon) setTimeout(() => icon.classList.remove('animate-spin'), 500);
             }
@@ -249,7 +336,7 @@
             };
 
             const sortedDates = Object.keys(grouped).sort((a, b) => parseDate(a) - parseDate(b));
-            
+
             dailyData = sortedDates.map(date => ({
                 date: date,
                 timestamp: parseDate(date),
@@ -271,13 +358,13 @@
             results.forEach(row => {
                 const text = row.filter(c => c && c.trim()).join(" ").trim();
                 if (!text) return;
-                
+
                 // Detect contact section
                 if (text.toLowerCase().includes("email addresses") || (text.toLowerCase().includes("names") && text.toLowerCase().includes("subjects"))) {
                     isContactSection = true;
                     return;
                 }
-                
+
                 if (isContactSection) {
                     // Extract contact row
                     if (row.length >= 3 && row[2] && row[2].includes("@")) {
@@ -308,7 +395,7 @@
         function jumpToToday(shouldRender = true) {
             const now = new Date();
             now.setHours(0,0,0,0);
-            
+
             let closest = dailyData[0];
             let minDiff = Infinity;
             dailyData.forEach(d => {
@@ -318,7 +405,7 @@
                     closest = d;
                 }
             });
-            
+
             if (closest) {
                 selectedDateStr = closest.date;
                 if (shouldRender) {
@@ -330,6 +417,7 @@
 
         function renderApp() {
             document.getElementById('loading').classList.add('hidden');
+            document.getElementById(`view-${currentTab}`).classList.remove('hidden');
             if (currentTab === 'dashboard') {
                 renderDateNav();
                 updateDashboardDisplay();
@@ -346,10 +434,13 @@
             if (!nav) return;
             nav.innerHTML = "";
             dailyData.forEach(day => {
-                const btn = document.createElement('button');
                 const isActive = day.date === selectedDateStr;
-                btn.className = `date-btn px-4 py-2 rounded-xl text-xs font-bold border transition-all flex-shrink-0 ${isActive ? 'date-active' : 'bg-white dark:bg-dark-card text-slate-400 dark:text-dark-muted border-slate-100 dark:border-slate-800'} ${day.hasWAH && !isActive ? 'has-wah' : ''}`;
-                btn.innerText = day.date;
+                const wd = day.timestamp.toLocaleDateString('en-GB', { weekday: 'short' });
+                const dn = day.timestamp.getDate();
+
+                const btn = document.createElement('button');
+                btn.className = `date-tile ${isActive ? 'selected' : ''} ${day.hasWAH ? 'has-wah' : ''}`;
+                btn.innerHTML = `<span class="wd">${wd}</span><span class="dn">${dn}</span><span class="dot"></span>`;
                 btn.onclick = () => {
                     selectedDateStr = day.date;
                     renderDateNav();
@@ -357,74 +448,74 @@
                 };
                 nav.appendChild(btn);
             });
-            const activeBtn = nav.querySelector('.date-active');
+            const activeBtn = nav.querySelector('.selected');
             if (activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
         }
 
         function updateDashboardDisplay() {
-            const displayDate = document.getElementById('display-date');
-            if (displayDate) displayDate.innerText = selectedDateStr;
-            
             const day = dailyData.find(d => d.date === selectedDateStr);
+            const displayDate = document.getElementById('display-date');
+            if (displayDate) {
+                displayDate.innerText = day
+                    ? day.timestamp.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+                    : selectedDateStr;
+            }
             if (!day) return;
 
             const wah = day.entries.find(e => e.component.toLowerCase().includes('wah'));
             const lesson = day.entries.find(e => e.component.toLowerCase().includes('lesson'));
 
-            // Render WAH
+            const buildEntries = (row) => {
+                if (!row) return "";
+                let html = "";
+                SUBJECTS.forEach(sub => {
+                    const val = row[sub.id];
+                    if (val && val.trim()) {
+                        html += `
+                            <div class="entry" style="--entry-color:${sub.color}">
+                                <span class="label">${sub.label}</span>
+                                <p class="body">${val}</p>
+                            </div>`;
+                    }
+                });
+                return html;
+            };
+
             const wahContainer = document.getElementById('wah-content');
             if (wahContainer) {
-                let wahHtml = "";
-                if (wah) {
-                    SUBJECTS.forEach(sub => {
-                        const val = wah[sub.id];
-                        if (val && val.trim()) {
-                            wahHtml += `
-                                <div>
-                                    <span class="subject-tag ${sub.color}">${sub.label}</span>
-                                    <p class="text-slate-600 dark:text-slate-300 font-medium pl-1">${val}</p>
-                                </div>`;
-                        }
-                    });
-                }
-                wahContainer.innerHTML = wahHtml || "<p class='text-slate-400 dark:text-dark-muted italic'>No WAH for this date.</p>";
+                wahContainer.innerHTML = buildEntries(wah) || `<p class="empty-note">No work-at-home tasks for this date.</p>`;
             }
 
-            // Render Lessons
             const lessonContainer = document.getElementById('lessons-content');
             if (lessonContainer) {
-                let lessonHtml = "";
-                if (lesson) {
-                    SUBJECTS.forEach(sub => {
-                        const val = lesson[sub.id];
-                        if (val && val.trim()) {
-                            lessonHtml += `
-                                <div class="border-l-2 border-slate-100 dark:border-slate-800 pl-4 py-1">
-                                    <span class="subject-tag ${sub.color}">${sub.label}</span>
-                                    <p class="text-slate-700 dark:text-slate-300 text-sm leading-relaxed mt-1">${val}</p>
-                                </div>`;
-                        }
-                    });
-                }
-                lessonContainer.innerHTML = lessonHtml || "<p class='text-slate-400 dark:text-dark-muted italic'>No lesson details.</p>";
+                lessonContainer.innerHTML = buildEntries(lesson) || `<p class="empty-note">No lesson details for this date.</p>`;
             }
         }
 
         function renderContacts() {
             const list = document.getElementById('contacts-list');
             if (!list) return;
-            list.innerHTML = contactData.length === 0 ? "<p class='text-slate-400 italic p-4'>Contact list is empty.</p>" : contactData.map(c => `
-                <div class="card bg-white dark:bg-dark-card p-4 rounded-2xl shadow-sm flex items-center justify-between border border-slate-50 dark:border-slate-800">
-                    <div><h3 class="font-bold">${c.name}</h3><p class="text-xs text-slate-500 dark:text-dark-muted font-medium">${c.subject}</p></div>
-                    <a href="mailto:${c.email}" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg"><i data-lucide="mail" class="w-4 h-4"></i></a>
-                </div>
-            `).join('');
+            list.innerHTML = contactData.length === 0
+                ? `<p class="empty-note p-4">The contact list is empty.</p>`
+                : contactData.map(c => `
+                    <div class="card contact-card">
+                        <div>
+                            <div class="name">${c.name}</div>
+                            <div class="subj">${c.subject}</div>
+                        </div>
+                        <a href="mailto:${c.email}" class="icon-btn" style="width:36px;height:36px">
+                            <i data-lucide="mail" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+                `).join('');
         }
 
         function renderNotices() {
             const list = document.getElementById('notices-list');
             if (!list) return;
-            list.innerHTML = noticeData.length === 0 ? "<p class='text-slate-400 italic'>No active notices.</p>" : noticeData.map(n => `<div class="announcement-item"><p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">${n}</p></div>`).join('');
+            list.innerHTML = noticeData.length === 0
+                ? `<p class="empty-note">No active notices.</p>`
+                : noticeData.map(n => `<div class="notice-item"><p>${n}</p></div>`).join('');
         }
 
         fetchData();
